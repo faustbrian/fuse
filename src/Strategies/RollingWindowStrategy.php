@@ -12,12 +12,17 @@ namespace Cline\Fuse\Strategies;
 use Cline\Fuse\Contracts\Strategy;
 use Cline\Fuse\ValueObjects\CircuitBreakerConfiguration;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
+use Illuminate\Support\Facades\Date;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class RollingWindowStrategy implements Strategy
 {
     public function shouldOpen(CircuitBreakerMetrics $metrics, CircuitBreakerConfiguration $configuration): bool
     {
-        if (! $metrics->hasSufficientThroughput($configuration->minimumThroughput)) {
+        if (!$metrics->hasSufficientThroughput($configuration->minimumThroughput)) {
             return false;
         }
 
@@ -25,7 +30,7 @@ final readonly class RollingWindowStrategy implements Strategy
             return false;
         }
 
-        $windowStart = time() - $configuration->samplingDuration;
+        $windowStart = Date::now()->getTimestamp() - $configuration->samplingDuration;
 
         if ($metrics->lastFailureTime < $windowStart) {
             return false;

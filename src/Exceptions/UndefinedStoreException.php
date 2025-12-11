@@ -11,10 +11,15 @@ namespace Cline\Fuse\Exceptions;
 
 use InvalidArgumentException;
 
+use function sprintf;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 final class UndefinedStoreException extends InvalidArgumentException
 {
     public static function forName(string $name): self
     {
-        return new self("Circuit breaker store [{$name}] is not defined.");
+        return new self(sprintf('Circuit breaker store [%s] is not defined.', $name));
     }
 }

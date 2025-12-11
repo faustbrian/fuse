@@ -11,9 +11,7 @@ namespace Cline\Fuse;
 
 use Cline\Fuse\Contracts\CircuitBreakerStore;
 use Cline\Fuse\Database\ModelRegistry;
-use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Container\Container;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
@@ -84,12 +82,12 @@ final class FuseServiceProvider extends PackageServiceProvider
         });
 
         // Register CircuitBreakerStore based on default store config
-        $this->app->singleton(CircuitBreakerStore::class, function (Container $app): CircuitBreakerStore {
+        $this->app->singleton(function (Container $app): CircuitBreakerStore {
             /** @var CircuitBreakerManager $manager */
             $manager = $app->make(CircuitBreakerManager::class);
 
             $defaultDriver = $manager->getDefaultDriver();
-            $config = Config::get("fuse.stores.{$defaultDriver}", []);
+            $config = Config::get('fuse.stores.'.$defaultDriver, []);
 
             return match ($config['driver'] ?? 'cache') {
                 'array' => $manager->createArrayDriver(),

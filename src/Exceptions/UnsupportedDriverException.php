@@ -11,10 +11,15 @@ namespace Cline\Fuse\Exceptions;
 
 use InvalidArgumentException;
 
+use function sprintf;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 final class UnsupportedDriverException extends InvalidArgumentException
 {
     public static function forDriver(string $driver): self
     {
-        return new self("Circuit breaker driver [{$driver}] is not supported.");
+        return new self(sprintf('Circuit breaker driver [%s] is not supported.', $driver));
     }
 }

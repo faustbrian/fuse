@@ -37,9 +37,11 @@ trait HasFusePrimaryKey
     {
         $primaryKeyType = config('fuse.primary_key_type', 'id');
 
-        if ($primaryKeyType === 'ulid' || $primaryKeyType === 'uuid') {
-            $this->incrementing = false;
-            $this->keyType = 'string';
+        if ($primaryKeyType !== 'ulid' && $primaryKeyType !== 'uuid') {
+            return;
         }
+
+        $this->incrementing = false;
+        $this->keyType = 'string';
     }
 }

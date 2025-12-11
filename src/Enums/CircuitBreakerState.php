@@ -9,6 +9,9 @@
 
 namespace Cline\Fuse\Enums;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 enum CircuitBreakerState: string
 {
     case CLOSED = 'closed';
@@ -32,7 +35,11 @@ enum CircuitBreakerState: string
 
     public function canAttemptRequest(): bool
     {
-        return $this->isClosed() || $this->isHalfOpen();
+        if ($this->isClosed()) {
+            return true;
+        }
+
+        return $this->isHalfOpen();
     }
 
     public function shouldRejectRequest(): bool

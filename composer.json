@@ -1,86 +1,83 @@
 {
-    "name": "cline/fuse",
-    "description": "Laravel circuit breaker package with highly configurable fault tolerance",
-    "license": "MIT",
-    "keywords": [
-        "php",
-        "laravel",
-        "circuit-breaker",
-        "fault-tolerance",
-        "resilience",
-        "microservices"
-    ],
-    "authors": [
-        {
-            "name": "Brian Faust",
-            "email": "brian@cline.sh"
-        }
-    ],
-    "require": {
-        "php": "^8.4.0",
-        "illuminate/cache": "^12.0",
-        "illuminate/config": "^12.0",
-        "illuminate/contracts": "^12.0",
-        "illuminate/database": "^12.0",
-        "illuminate/events": "^12.0",
-        "illuminate/support": "^12.0",
-        "spatie/laravel-package-tools": "^1.16"
-    },
-    "require-dev": {
-        "cline/php-cs-fixer": "^1.0.4",
-        "driftingly/rector-laravel": "^2.0.7",
-        "ergebnis/composer-normalize": "^2.49@dev",
-        "laravel/pint": "^1.25.1",
-        "orchestra/testbench": "^10.6",
-        "pestphp/pest": "^3.8.4",
-        "pestphp/pest-plugin-laravel": "^3.2",
-        "pestphp/pest-plugin-type-coverage": "^3.6.1",
-        "phpstan/phpstan": "^2.1.30",
-        "rector/rector": "^2.2.1",
-        "symfony/var-dumper": "^7.3.4"
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true,
-    "autoload": {
-        "psr-4": {
-            "Cline\\Fuse\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Cline\\Fuse\\FuseServiceProvider"
-            ],
-            "aliases": {
-                "Fuse": "Cline\\Fuse\\Facades\\Fuse"
-            }
-        }
-    },
-    "config": {
-        "allow-plugins": {
-            "ergebnis/composer-normalize": true,
-            "pestphp/pest-plugin": true
-        }
-    },
-    "scripts": {
-        "lint": "vendor/bin/php-cs-fixer fix",
-        "refactor": "rector",
-        "test": [
-            "@test:lint",
-            "@test:type-coverage",
-            "@test:unit",
-            "@test:types",
-            "@test:refactor"
-        ],
-        "test:lint": "vendor/bin/php-cs-fixer check --diff",
-        "test:refactor": "rector --dry-run",
-        "test:type-coverage": "pest --parallel --exactly=100 --type-coverage",
-        "test:types": "phpstan",
-        "test:unit": "pest --parallel --exactly=100 --coverage"
+  "name": "cline/fuse",
+  "description": "Laravel circuit breaker package with highly configurable fault tolerance",
+  "license": "MIT",
+  "keywords": [
+    "php",
+    "laravel",
+    "circuit-breaker",
+    "fault-tolerance",
+    "resilience",
+    "microservices"
+  ],
+  "authors": [
+    {
+      "name": "Brian Faust",
+      "email": "brian@cline.sh"
     }
+  ],
+  "require": {
+    "php": "^8.5.0",
+    "illuminate/cache": "^12.0",
+    "illuminate/config": "^12.0",
+    "illuminate/contracts": "^12.0",
+    "illuminate/database": "^12.0",
+    "illuminate/events": "^12.0",
+    "illuminate/support": "^12.0",
+    "spatie/laravel-package-tools": "^1.92.7"
+  },
+  "require-dev": {
+    "cline/coding-standard": "^1.5.7",
+    "ergebnis/composer-normalize": "^2.48.2",
+    "orchestra/testbench": "^10.8",
+    "pestphp/pest": "^4.1.6",
+    "pestphp/pest-plugin-laravel": "^4.0",
+    "pestphp/pest-plugin-type-coverage": "^4.0.3",
+    "symfony/var-dumper": "^7.4.0"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "Cline\\Fuse\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "ergebnis/composer-normalize": true,
+      "pestphp/pest-plugin": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "aliases": {
+        "Fuse": "Cline\\Fuse\\Facades\\Fuse"
+      },
+      "providers": [
+        "Cline\\Fuse\\FuseServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "ecs check --fix",
+    "refactor": "rector",
+    "test": [
+      "@test:lint",
+      "@test:type-coverage",
+      "@test:unit",
+      "@test:types",
+      "@test:refactor"
+    ],
+    "test:lint": "ecs check",
+    "test:refactor": "rector --dry-run",
+    "test:type-coverage": "pest --parallel --min=90 --type-coverage",
+    "test:types": "phpstan",
+    "test:unit": "pest --parallel --min=90 --coverage"
+  }
 }

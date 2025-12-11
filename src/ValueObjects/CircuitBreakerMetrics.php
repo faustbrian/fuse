@@ -9,6 +9,10 @@
 
 namespace Cline\Fuse\ValueObjects;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CircuitBreakerMetrics
 {
     public function __construct(

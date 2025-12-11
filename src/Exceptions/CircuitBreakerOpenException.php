@@ -11,6 +11,11 @@ namespace Cline\Fuse\Exceptions;
 
 use RuntimeException;
 
+use function sprintf;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 final class CircuitBreakerOpenException extends RuntimeException
 {
     public function __construct(

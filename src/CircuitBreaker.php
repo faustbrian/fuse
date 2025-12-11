@@ -23,8 +23,16 @@ use Cline\Fuse\ValueObjects\CircuitBreakerConfiguration;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Date;
 use Throwable;
 
+use function config;
+use function event;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CircuitBreaker
 {
     public function __construct(
@@ -39,7 +47,9 @@ final readonly class CircuitBreaker
     {
         $state = $this->getState();
 
-        $this->dispatchEvent(new CircuitBreakerRequestAttempted($this->configuration->name, $state));
+        $this->dispatchEvent(
+            new CircuitBreakerRequestAttempted($this->configuration->name, $state)
+        );
 
         if ($state->isOpen()) {
             if ($this->shouldAttemptReset()) {
@@ -60,11 +70,15 @@ final readonly class CircuitBreaker
 
         $state = $this->getState();
 
-        $this->dispatchEvent(new CircuitBreakerRequestSucceeded($this->configuration->name, $state));
+        $this->dispatchEvent(
+            new CircuitBreakerRequestSucceeded($this->configuration->name, $state)
+        );
 
-        if ($state->isHalfOpen() && $this->shouldClose()) {
-            $this->transitionToClosed();
+        if (!$state->isHalfOpen() || !$this->shouldClose()) {
+            return;
         }
+
+        $this->transitionToClosed();
     }
 
     public function recordFailure(): void
@@ -73,11 +87,15 @@ final readonly class CircuitBreaker
 
         $state = $this->getState();
 
-        $this->dispatchEvent(new CircuitBreakerRequestFailed($this->configuration->name, $state));
+        $this->dispatchEvent(
+            new CircuitBreakerRequestFailed($this->configuration->name, $state)
+        );
 
-        if ($state->canAttemptRequest() && $this->shouldOpen()) {
-            $this->transitionToOpen();
+        if (!$state->canAttemptRequest() || !$this->shouldOpen()) {
+            return;
         }
+
+        $this->transitionToOpen();
     }
 
     public function getState(): CircuitBreakerState
@@ -103,12 +121,12 @@ final readonly class CircuitBreaker
             $this->recordSuccess();
 
             return $result;
-        } catch (Throwable $e) {
-            if ($this->shouldRecordException($e)) {
+        } catch (Throwable $throwable) {
+            if ($this->shouldRecordException($throwable)) {
                 $this->recordFailure();
             }
 
-            throw $e;
+            throw $throwable;
         }
     }
 
@@ -134,32 +152,38 @@ final readonly class CircuitBreaker
             return true;
         }
 
-        return (time() - $metrics->lastFailureTime) >= $this->configuration->timeout;
+        return (Date::now()->getTimestamp() - $metrics->lastFailureTime) >= $this->configuration->timeout;
     }
 
     private function transitionToOpen(): void
     {
         $this->store->transitionToOpen($this->configuration->name, $this->context, $this->boundary);
-        $this->dispatchEvent(new CircuitBreakerOpened($this->configuration->name));
+        $this->dispatchEvent(
+            new CircuitBreakerOpened($this->configuration->name)
+        );
     }
 
     private function transitionToClosed(): void
     {
         $this->store->transitionToClosed($this->configuration->name, $this->context, $this->boundary);
-        $this->dispatchEvent(new CircuitBreakerClosed($this->configuration->name));
+        $this->dispatchEvent(
+            new CircuitBreakerClosed($this->configuration->name)
+        );
     }
 
     private function transitionToHalfOpen(): void
     {
         $this->store->transitionToHalfOpen($this->configuration->name, $this->context, $this->boundary);
-        $this->dispatchEvent(new CircuitBreakerHalfOpened($this->configuration->name));
+        $this->dispatchEvent(
+            new CircuitBreakerHalfOpened($this->configuration->name)
+        );
     }
 
     private function handleOpenCircuit(): never
     {
         $fallback = $this->getFallbackHandler();
 
-        if ($fallback !== null) {
+        if ($fallback instanceof Closure) {
             throw new CircuitBreakerOpenException(
                 name: $this->configuration->name,
                 fallbackValue: $fallback($this->configuration->name),
@@ -173,7 +197,7 @@ final readonly class CircuitBreaker
 
     private function getFallbackHandler(): ?Closure
     {
-        if (! config('fuse.fallbacks.enabled', true)) {
+        if (!config('fuse.fallbacks.enabled', true)) {
             return null;
         }
 
@@ -218,7 +242,7 @@ final readonly class CircuitBreaker
 
     private function dispatchEvent(object $event): void
     {
-        if (! config('fuse.events.enabled', true)) {
+        if (!config('fuse.events.enabled', true)) {
             return;
         }
 

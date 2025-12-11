@@ -11,6 +11,7 @@ namespace Cline\Fuse;
 
 use Cline\Fuse\Contracts\CircuitBreakerStore;
 use Cline\Fuse\Contracts\Strategy;
+use Cline\Fuse\Database\ModelRegistry;
 use Cline\Fuse\Exceptions\UndefinedStoreException;
 use Cline\Fuse\Exceptions\UnsupportedDriverException;
 use Cline\Fuse\Stores\ArrayCircuitBreakerStore;
@@ -19,6 +20,7 @@ use Cline\Fuse\Stores\DatabaseCircuitBreakerStore;
 use Cline\Fuse\ValueObjects\CircuitBreakerConfiguration;
 use Closure;
 use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Contracts\Cache\Factory;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +32,9 @@ use function assert;
 use function is_array;
 use function is_string;
 use function method_exists;
+use function sprintf;
 use function throw_if;
+use function throw_unless;
 use function ucfirst;
 
 /**
@@ -69,8 +73,6 @@ final class CircuitBreakerManager
      *
      * When set, circuit breakers will be scoped to this specific model instance,
      * allowing per-tenant, per-user, or per-integration circuit breakers.
-     *
-     * @var null|Model
      */
     private ?Model $context = null;
 
@@ -79,8 +81,6 @@ final class CircuitBreakerManager
      *
      * When set, circuit breakers will be scoped to this specific boundary model,
      * allowing tracking of failures for specific integrations or external services.
-     *
-     * @var null|Model
      */
     private ?Model $boundary = null;
 
@@ -205,8 +205,8 @@ final class CircuitBreakerManager
     /**
      * Create an instance of the cache driver.
      *
-     * @param  array<string, mixed>       $config The driver configuration
-     * @return CacheCircuitBreakerStore   The created cache store instance
+     * @param  array<string, mixed>     $config The driver configuration
+     * @return CacheCircuitBreakerStore The created cache store instance
      */
     public function createCacheDriver(array $config): CacheCircuitBreakerStore
     {
@@ -214,7 +214,7 @@ final class CircuitBreakerManager
         $prefix = $config['prefix'] ?? 'circuit_breaker';
 
         $cache = $cacheStore !== null
-            ? $this->container->make('cache')->store($cacheStore)
+            ? $this->container->make(Factory::class)->store($cacheStore)
             : $this->container->make(CacheRepository::class);
 
         return new CacheCircuitBreakerStore($cache, $prefix);
@@ -232,17 +232,17 @@ final class CircuitBreakerManager
 
         return new DatabaseCircuitBreakerStore(
             connection: $connection,
-            modelRegistry: $this->container->make(\Cline\Fuse\Database\ModelRegistry::class),
+            modelRegistry: $this->container->make(ModelRegistry::class),
         );
     }
 
     /**
      * Create a circuit breaker instance with the given configuration.
      *
-     * @param  string                        $name   Circuit breaker name
-     * @param  null|CircuitBreakerStore      $store  Optional store override
-     * @param  null|string                   $strategyName Optional strategy name override
-     * @return CircuitBreaker                The configured circuit breaker instance
+     * @param  string                   $name         Circuit breaker name
+     * @param  null|CircuitBreakerStore $store        Optional store override
+     * @param  null|string              $strategyName Optional strategy name override
+     * @return CircuitBreaker           The configured circuit breaker instance
      */
     public function make(
         string $name,
@@ -295,9 +295,11 @@ final class CircuitBreakerManager
         $name ??= $this->getDefaultDriver();
 
         foreach ((array) $name as $storeName) {
-            if (array_key_exists($storeName, $this->stores)) {
-                unset($this->stores[$storeName]);
+            if (!array_key_exists($storeName, $this->stores)) {
+                continue;
             }
+
+            unset($this->stores[$storeName]);
         }
 
         return $this;
@@ -367,11 +369,11 @@ final class CircuitBreakerManager
     /**
      * Create a store driver instance.
      *
-     * @param  array<string, mixed> $config The driver configuration
+     * @param array<string, mixed> $config The driver configuration
      *
      * @throws UnsupportedDriverException If the driver is not supported
      *
-     * @return CircuitBreakerStore        The created store instance
+     * @return CircuitBreakerStore The created store instance
      */
     private function createStoreDriver(array $config): CircuitBreakerStore
     {
@@ -435,18 +437,16 @@ final class CircuitBreakerManager
     /**
      * Resolve a strategy instance by name.
      *
-     * @param  string   $name The strategy name
-     * @return Strategy The resolved strategy instance
+     * @param string $name The strategy name
      *
      * @throws InvalidArgumentException If the strategy is not defined
+     * @return Strategy                 The resolved strategy instance
      */
     private function resolveStrategy(string $name): Strategy
     {
         $strategies = Config::get('fuse.strategies.available', []);
 
-        if (!isset($strategies[$name])) {
-            throw new InvalidArgumentException("Strategy [{$name}] is not defined.");
-        }
+        throw_unless(isset($strategies[$name]), InvalidArgumentException::class, sprintf('Strategy [%s] is not defined.', $name));
 
         return $this->container->make($strategies[$name]);
     }

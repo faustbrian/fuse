@@ -11,6 +11,10 @@ namespace Cline\Fuse\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CircuitBreakerOpened
 {
     use Dispatchable;

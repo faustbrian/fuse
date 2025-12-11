@@ -11,11 +11,16 @@ namespace Cline\Fuse\Database;
 
 use Cline\Fuse\Database\Concerns\HasFusePrimaryKey;
 use Cline\Fuse\Enums\CircuitBreakerState;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+
+use function config;
 
 /**
  * Circuit breaker model for database persistence.
@@ -24,29 +29,29 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * Tracks consecutive and total successes/failures along with state transitions
  * and timestamps for monitoring and recovery behavior.
  *
- * @property int|string                        $id                     Primary key (int, ULID, or UUID based on config)
- * @property null|string                       $context_type           Polymorphic type of the owning context
- * @property null|string                       $context_id             Polymorphic ID of the owning context
- * @property null|string                       $boundary_type          Polymorphic type of the boundary scope
- * @property null|string                       $boundary_id            Polymorphic ID of the boundary scope
- * @property string                            $name                   Circuit breaker name
- * @property CircuitBreakerState               $state                  Current state (closed, open, half_open)
- * @property int                               $consecutive_successes  Consecutive successful requests
- * @property int                               $consecutive_failures   Consecutive failed requests
- * @property int                               $total_successes        Total successful requests
- * @property int                               $total_failures         Total failed requests
- * @property null|\Illuminate\Support\Carbon   $last_success_at        Timestamp of last successful request
- * @property null|\Illuminate\Support\Carbon   $last_failure_at        Timestamp of last failed request
- * @property null|\Illuminate\Support\Carbon   $opened_at              Timestamp when circuit opened
- * @property null|\Illuminate\Support\Carbon   $closed_at              Timestamp when circuit closed
- * @property \Illuminate\Support\Carbon        $created_at             Creation timestamp
- * @property \Illuminate\Support\Carbon        $updated_at             Last update timestamp
- * @property null|Model                        $context                The polymorphic model this circuit breaker belongs to
- * @property null|Model                        $boundary               The polymorphic boundary scope for this circuit breaker
+ * @property null|Model          $boundary              The polymorphic boundary scope for this circuit breaker
+ * @property null|string         $boundary_id           Polymorphic ID of the boundary scope
+ * @property null|string         $boundary_type         Polymorphic type of the boundary scope
+ * @property null|Carbon         $closed_at             Timestamp when circuit closed
+ * @property int                 $consecutive_failures  Consecutive failed requests
+ * @property int                 $consecutive_successes Consecutive successful requests
+ * @property null|Model          $context               The polymorphic model this circuit breaker belongs to
+ * @property null|string         $context_id            Polymorphic ID of the owning context
+ * @property null|string         $context_type          Polymorphic type of the owning context
+ * @property Carbon              $created_at            Creation timestamp
+ * @property int|string          $id                    Primary key (int, ULID, or UUID based on config)
+ * @property null|Carbon         $last_failure_at       Timestamp of last failed request
+ * @property null|Carbon         $last_success_at       Timestamp of last successful request
+ * @property string              $name                  Circuit breaker name
+ * @property null|Carbon         $opened_at             Timestamp when circuit opened
+ * @property CircuitBreakerState $state                 Current state (closed, open, half_open)
+ * @property int                 $total_failures        Total failed requests
+ * @property int                 $total_successes       Total successful requests
+ * @property Carbon              $updated_at            Last update timestamp
  *
  * @author Brian Faust <brian@cline.sh>
  */
-class CircuitBreaker extends Model
+final class CircuitBreaker extends Model
 {
     /** @use HasFactory<Factory<static>> */
     use HasFactory;
@@ -159,62 +164,6 @@ class CircuitBreaker extends Model
     }
 
     /**
-     * Scope a query to filter by context.
-     *
-     * Filters circuit breakers to those belonging to the specified model context.
-     * Pass null to get only global circuit breakers (no context).
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query   The query builder
-     * @param  null|Model                                    $context The context model or null for global
-     * @return \Illuminate\Database\Eloquent\Builder<static> The modified query builder
-     */
-    public function scopeForContext($query, ?Model $context)
-    {
-        if ($context === null) {
-            return $query->whereNull('context_type')->whereNull('context_id');
-        }
-
-        return $query->where('context_type', $context->getMorphClass())
-            ->where('context_id', $context->getKey());
-    }
-
-    /**
-     * Scope a query to filter by boundary.
-     *
-     * Filters circuit breakers to those scoped to the specified boundary model.
-     * Pass null to get only circuit breakers without a boundary scope.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query    The query builder
-     * @param  null|Model                                    $boundary The boundary model or null for no boundary
-     * @return \Illuminate\Database\Eloquent\Builder<static> The modified query builder
-     */
-    public function scopeForBoundary($query, ?Model $boundary)
-    {
-        if ($boundary === null) {
-            return $query->whereNull('boundary_type')->whereNull('boundary_id');
-        }
-
-        return $query->where('boundary_type', $boundary->getMorphClass())
-            ->where('boundary_id', $boundary->getKey());
-    }
-
-    /**
-     * Scope a query to filter only global circuit breakers.
-     *
-     * Returns only circuit breakers that are not associated with any specific context or boundary.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<static> $query The query builder
-     * @return \Illuminate\Database\Eloquent\Builder<static> The modified query builder
-     */
-    public function scopeGlobal($query)
-    {
-        return $query->whereNull('context_type')
-            ->whereNull('context_id')
-            ->whereNull('boundary_type')
-            ->whereNull('boundary_id');
-    }
-
-    /**
      * Check if the circuit breaker is in the open state.
      *
      * When open, the circuit breaker rejects all requests immediately without
@@ -251,5 +200,64 @@ class CircuitBreaker extends Model
     public function isHalfOpen(): bool
     {
         return $this->state->isHalfOpen();
+    }
+
+    /**
+     * Scope a query to filter by context.
+     *
+     * Filters circuit breakers to those belonging to the specified model context.
+     * Pass null to get only global circuit breakers (no context).
+     *
+     * @param  Builder<static> $query   The query builder
+     * @param  null|Model      $context The context model or null for global
+     * @return Builder<static> The modified query builder
+     */
+    #[Scope()]
+    protected function forContext($query, ?Model $context)
+    {
+        if (!$context instanceof Model) {
+            return $query->whereNull('context_type')->whereNull('context_id');
+        }
+
+        return $query->where('context_type', $context->getMorphClass())
+            ->where('context_id', $context->getKey());
+    }
+
+    /**
+     * Scope a query to filter by boundary.
+     *
+     * Filters circuit breakers to those scoped to the specified boundary model.
+     * Pass null to get only circuit breakers without a boundary scope.
+     *
+     * @param  Builder<static> $query    The query builder
+     * @param  null|Model      $boundary The boundary model or null for no boundary
+     * @return Builder<static> The modified query builder
+     */
+    #[Scope()]
+    protected function forBoundary($query, ?Model $boundary)
+    {
+        if (!$boundary instanceof Model) {
+            return $query->whereNull('boundary_type')->whereNull('boundary_id');
+        }
+
+        return $query->where('boundary_type', $boundary->getMorphClass())
+            ->where('boundary_id', $boundary->getKey());
+    }
+
+    /**
+     * Scope a query to filter only global circuit breakers.
+     *
+     * Returns only circuit breakers that are not associated with any specific context or boundary.
+     *
+     * @param  Builder<static> $query The query builder
+     * @return Builder<static> The modified query builder
+     */
+    #[Scope()]
+    protected function global($query)
+    {
+        return $query->whereNull('context_type')
+            ->whereNull('context_id')
+            ->whereNull('boundary_type')
+            ->whereNull('boundary_id');
     }
 }

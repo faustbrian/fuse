@@ -13,7 +13,13 @@ use Cline\Fuse\Contracts\CircuitBreakerStore;
 use Cline\Fuse\Enums\CircuitBreakerState;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Date;
 
+use function implode;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 final class ArrayCircuitBreakerStore implements CircuitBreakerStore
 {
     private array $states = [];
@@ -31,7 +37,7 @@ final class ArrayCircuitBreakerStore implements CircuitBreakerStore
     {
         $key = $this->buildKey($name, $context, $boundary);
 
-        if (! isset($this->metrics[$key])) {
+        if (!isset($this->metrics[$key])) {
             return CircuitBreakerMetrics::empty();
         }
 
@@ -52,10 +58,10 @@ final class ArrayCircuitBreakerStore implements CircuitBreakerStore
         $key = $this->buildKey($name, $context, $boundary);
         $this->ensureMetricsExist($key);
 
-        $this->metrics[$key]['consecutive_successes']++;
+        ++$this->metrics[$key]['consecutive_successes'];
         $this->metrics[$key]['consecutive_failures'] = 0;
-        $this->metrics[$key]['total_successes']++;
-        $this->metrics[$key]['last_success_time'] = time();
+        ++$this->metrics[$key]['total_successes'];
+        $this->metrics[$key]['last_success_time'] = Date::now()->getTimestamp();
     }
 
     public function recordFailure(string $name, ?Model $context = null, ?Model $boundary = null): void
@@ -63,10 +69,10 @@ final class ArrayCircuitBreakerStore implements CircuitBreakerStore
         $key = $this->buildKey($name, $context, $boundary);
         $this->ensureMetricsExist($key);
 
-        $this->metrics[$key]['consecutive_failures']++;
+        ++$this->metrics[$key]['consecutive_failures'];
         $this->metrics[$key]['consecutive_successes'] = 0;
-        $this->metrics[$key]['total_failures']++;
-        $this->metrics[$key]['last_failure_time'] = time();
+        ++$this->metrics[$key]['total_failures'];
+        $this->metrics[$key]['last_failure_time'] = Date::now()->getTimestamp();
     }
 
     public function transitionToOpen(string $name, ?Model $context = null, ?Model $boundary = null): void
@@ -91,20 +97,19 @@ final class ArrayCircuitBreakerStore implements CircuitBreakerStore
     public function reset(string $name, ?Model $context = null, ?Model $boundary = null): void
     {
         $key = $this->buildKey($name, $context, $boundary);
-        unset($this->states[$key]);
-        unset($this->metrics[$key]);
+        unset($this->states[$key], $this->metrics[$key]);
     }
 
     private function buildKey(string $name, ?Model $context = null, ?Model $boundary = null): string
     {
         $parts = [];
 
-        if ($context !== null) {
+        if ($context instanceof Model) {
             $parts[] = $context->getMorphClass();
             $parts[] = (string) $context->getKey();
         }
 
-        if ($boundary !== null) {
+        if ($boundary instanceof Model) {
             $parts[] = $boundary->getMorphClass();
             $parts[] = (string) $boundary->getKey();
         }
@@ -116,16 +121,18 @@ final class ArrayCircuitBreakerStore implements CircuitBreakerStore
 
     private function ensureMetricsExist(string $key): void
     {
-        if (! isset($this->metrics[$key])) {
-            $this->metrics[$key] = [
-                'consecutive_successes' => 0,
-                'consecutive_failures' => 0,
-                'total_successes' => 0,
-                'total_failures' => 0,
-                'last_success_time' => null,
-                'last_failure_time' => null,
-            ];
+        if (isset($this->metrics[$key])) {
+            return;
         }
+
+        $this->metrics[$key] = [
+            'consecutive_successes' => 0,
+            'consecutive_failures' => 0,
+            'total_successes' => 0,
+            'total_failures' => 0,
+            'last_success_time' => null,
+            'last_failure_time' => null,
+        ];
     }
 
     private function resetMetrics(string $key): void

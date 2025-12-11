@@ -13,6 +13,9 @@ use Cline\Fuse\Enums\CircuitBreakerState;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 interface CircuitBreakerStore
 {
     public function getState(string $name, ?Model $context = null, ?Model $boundary = null): CircuitBreakerState;

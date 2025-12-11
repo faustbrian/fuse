@@ -21,21 +21,20 @@ use Illuminate\Support\Facades\Facade;
 /**
  * Facade for the Fuse circuit breaker system.
  *
- * @method static CircuitBreaker store(?string $store = null)
- * @method static CircuitBreaker driver(?string $name = null)
- * @method static ArrayCircuitBreakerStore createArrayDriver()
- * @method static CacheCircuitBreakerStore createCacheDriver(array $config)
+ * @method static ArrayCircuitBreakerStore    createArrayDriver()
+ * @method static CacheCircuitBreakerStore    createCacheDriver(array $config)
  * @method static DatabaseCircuitBreakerStore createDatabaseDriver(array $config)
- * @method static CircuitBreaker make(string $name, ?CircuitBreakerStore $store = null, ?string $strategyName = null)
- * @method static string getDefaultDriver()
- * @method static void setDefaultDriver(string $name)
- * @method static CircuitBreakerManager forgetDriver(array|string|null $name = null)
- * @method static CircuitBreakerManager forgetDrivers()
- * @method static CircuitBreakerManager extend(string $driver, Closure $callback)
- *
- * @see CircuitBreakerManager
+ * @method static CircuitBreaker              driver(?string $name = null)
+ * @method static CircuitBreakerManager       extend(string $driver, Closure $callback)
+ * @method static CircuitBreakerManager       forgetDriver(array|string|null $name = null)
+ * @method static CircuitBreakerManager       forgetDrivers()
+ * @method static string                      getDefaultDriver()
+ * @method static CircuitBreaker              make(string $name, ?CircuitBreakerStore $store = null, ?string $strategyName = null)
+ * @method static void                        setDefaultDriver(string $name)
+ * @method static CircuitBreaker              store(?string $store = null)
  *
  * @author Brian Faust <brian@cline.sh>
+ * @see CircuitBreakerManager
  */
 final class Fuse extends Facade
 {

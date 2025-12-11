@@ -14,7 +14,14 @@ use Cline\Fuse\Enums\CircuitBreakerState;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Date;
 
+use function implode;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CacheCircuitBreakerStore implements CircuitBreakerStore
 {
     public function __construct(
@@ -55,10 +62,10 @@ final readonly class CacheCircuitBreakerStore implements CircuitBreakerStore
     {
         $metrics = $this->getMetricsArray($name, $context, $boundary);
 
-        $metrics['consecutive_successes']++;
+        ++$metrics['consecutive_successes'];
         $metrics['consecutive_failures'] = 0;
-        $metrics['total_successes']++;
-        $metrics['last_success_time'] = time();
+        ++$metrics['total_successes'];
+        $metrics['last_success_time'] = Date::now()->getTimestamp();
 
         $this->cache->forever($this->metricsKey($name, $context, $boundary), $metrics);
     }
@@ -67,10 +74,10 @@ final readonly class CacheCircuitBreakerStore implements CircuitBreakerStore
     {
         $metrics = $this->getMetricsArray($name, $context, $boundary);
 
-        $metrics['consecutive_failures']++;
+        ++$metrics['consecutive_failures'];
         $metrics['consecutive_successes'] = 0;
-        $metrics['total_failures']++;
-        $metrics['last_failure_time'] = time();
+        ++$metrics['total_failures'];
+        $metrics['last_failure_time'] = Date::now()->getTimestamp();
 
         $this->cache->forever($this->metricsKey($name, $context, $boundary), $metrics);
     }
@@ -101,12 +108,12 @@ final readonly class CacheCircuitBreakerStore implements CircuitBreakerStore
     {
         $parts = [$this->prefix];
 
-        if ($context !== null) {
+        if ($context instanceof Model) {
             $parts[] = $context->getMorphClass();
             $parts[] = (string) $context->getKey();
         }
 
-        if ($boundary !== null) {
+        if ($boundary instanceof Model) {
             $parts[] = $boundary->getMorphClass();
             $parts[] = (string) $boundary->getKey();
         }
@@ -121,12 +128,12 @@ final readonly class CacheCircuitBreakerStore implements CircuitBreakerStore
     {
         $parts = [$this->prefix];
 
-        if ($context !== null) {
+        if ($context instanceof Model) {
             $parts[] = $context->getMorphClass();
             $parts[] = (string) $context->getKey();
         }
 
-        if ($boundary !== null) {
+        if ($boundary instanceof Model) {
             $parts[] = $boundary->getMorphClass();
             $parts[] = (string) $boundary->getKey();
         }

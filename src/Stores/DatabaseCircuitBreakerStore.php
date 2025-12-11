@@ -12,7 +12,6 @@ namespace Cline\Fuse\Stores;
 use Cline\Fuse\Contracts\CircuitBreakerStore;
 use Cline\Fuse\Database\CircuitBreaker;
 use Cline\Fuse\Database\CircuitBreakerEvent;
-use Cline\Fuse\Database\ModelRegistry;
 use Cline\Fuse\Enums\CircuitBreakerState;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 use Illuminate\Database\Eloquent\Model;
@@ -30,18 +29,17 @@ use function now;
  * for state consistency.
  *
  * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
  */
 final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
 {
     /**
      * Create a new database circuit breaker store instance.
      *
-     * @param null|string    $connection     Optional database connection name
-     * @param ModelRegistry  $modelRegistry  Registry for polymorphic key mappings
+     * @param null|string $connection Optional database connection name
      */
     public function __construct(
         private ?string $connection = null,
-        private ?ModelRegistry $modelRegistry = null,
     ) {}
 
     /**
@@ -213,10 +211,10 @@ final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
     /**
      * Find an existing circuit breaker or create a new one with default state.
      *
-     * @param  string          $name     The circuit breaker name
-     * @param  null|Model      $context  The polymorphic context or null for global
-     * @param  null|Model      $boundary The polymorphic boundary or null for no boundary
-     * @return CircuitBreaker  The found or created circuit breaker
+     * @param  string         $name     The circuit breaker name
+     * @param  null|Model     $context  The polymorphic context or null for global
+     * @param  null|Model     $boundary The polymorphic boundary or null for no boundary
+     * @return CircuitBreaker The found or created circuit breaker
      */
     private function findOrCreate(string $name, ?Model $context = null, ?Model $boundary = null): CircuitBreaker
     {
@@ -226,7 +224,7 @@ final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
         $query = $modelClass::query()->where('name', $name);
 
         // Apply context filtering
-        if ($context === null) {
+        if (!$context instanceof Model) {
             $query->whereNull('context_type')->whereNull('context_id');
         } else {
             $query->where('context_type', $context->getMorphClass())
@@ -234,7 +232,7 @@ final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
         }
 
         // Apply boundary filtering
-        if ($boundary === null) {
+        if (!$boundary instanceof Model) {
             $query->whereNull('boundary_type')->whereNull('boundary_id');
         } else {
             $query->where('boundary_type', $boundary->getMorphClass())
@@ -242,7 +240,7 @@ final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
         }
 
         /** @var CircuitBreaker $circuitBreaker */
-        $circuitBreaker = $query->firstOr(function () use ($modelClass, $name, $context, $boundary) {
+        return $query->firstOr(function () use ($modelClass, $name, $context, $boundary) {
             $attributes = [
                 'name' => $name,
                 'state' => CircuitBreakerState::CLOSED,
@@ -256,28 +254,26 @@ final readonly class DatabaseCircuitBreakerStore implements CircuitBreakerStore
                 'boundary_id' => null,
             ];
 
-            if ($context !== null) {
+            if ($context instanceof Model) {
                 $attributes['context_type'] = $context->getMorphClass();
                 $attributes['context_id'] = $context->getKey();
             }
 
-            if ($boundary !== null) {
+            if ($boundary instanceof Model) {
                 $attributes['boundary_type'] = $boundary->getMorphClass();
                 $attributes['boundary_id'] = $boundary->getKey();
             }
 
             return $modelClass::query()->create($attributes);
         });
-
-        return $circuitBreaker;
     }
 
     /**
      * Record an event in the audit trail.
      *
-     * @param  CircuitBreaker      $circuitBreaker The circuit breaker instance
-     * @param  string              $eventType      The event type (success, failure, opened, etc.)
-     * @param  array<string, mixed> $metadata       Additional event metadata
+     * @param CircuitBreaker       $circuitBreaker The circuit breaker instance
+     * @param string               $eventType      The event type (success, failure, opened, etc.)
+     * @param array<string, mixed> $metadata       Additional event metadata
      */
     private function recordEvent(CircuitBreaker $circuitBreaker, string $eventType, array $metadata = []): void
     {

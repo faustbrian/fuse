@@ -12,6 +12,9 @@ namespace Cline\Fuse\Contracts;
 use Cline\Fuse\ValueObjects\CircuitBreakerConfiguration;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ */
 interface Strategy
 {
     public function shouldOpen(CircuitBreakerMetrics $metrics, CircuitBreakerConfiguration $configuration): bool;

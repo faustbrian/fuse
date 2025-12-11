@@ -9,6 +9,12 @@
 
 namespace Cline\Fuse\ValueObjects;
 
+use function config;
+
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CircuitBreakerConfiguration
 {
     public function __construct(

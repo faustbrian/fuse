@@ -13,11 +13,15 @@ use Cline\Fuse\Contracts\Strategy;
 use Cline\Fuse\ValueObjects\CircuitBreakerConfiguration;
 use Cline\Fuse\ValueObjects\CircuitBreakerMetrics;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class PercentageFailuresStrategy implements Strategy
 {
     public function shouldOpen(CircuitBreakerMetrics $metrics, CircuitBreakerConfiguration $configuration): bool
     {
-        if (! $metrics->hasSufficientThroughput($configuration->minimumThroughput)) {
+        if (!$metrics->hasSufficientThroughput($configuration->minimumThroughput)) {
             return false;
         }
 

@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+use function config;
 
 /**
  * Circuit breaker event model for audit trail.
@@ -22,15 +25,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * transitions, successful/failed requests, or manual interventions. Provides
  * a complete audit trail for monitoring and debugging circuit breaker behavior.
  *
- * @property int|string                      $id                    Primary key (int, ULID, or UUID based on config)
- * @property int|string                      $circuit_breaker_id    Foreign key to circuit_breakers table
- * @property string                          $event_type            Type of event (opened, closed, half_opened, success, failure, reset)
- * @property null|array<string, mixed>       $metadata              Additional event context and data
- * @property \Illuminate\Support\Carbon      $created_at            Event timestamp
+ * @property int|string                $circuit_breaker_id Foreign key to circuit_breakers table
+ * @property Carbon                    $created_at         Event timestamp
+ * @property string                    $event_type         Type of event (opened, closed, half_opened, success, failure, reset)
+ * @property int|string                $id                 Primary key (int, ULID, or UUID based on config)
+ * @property null|array<string, mixed> $metadata           Additional event context and data
  *
  * @author Brian Faust <brian@cline.sh>
  */
-class CircuitBreakerEvent extends Model
+final class CircuitBreakerEvent extends Model
 {
     /** @use HasFactory<Factory<static>> */
     use HasFactory;

@@ -7,12 +7,8 @@
  * file that was distributed with this source code.
  */
 
-namespace Tests;
+use Cline\CodingStandard\EasyCodingStandard\Factory;
 
-use Orchestra\Testbench\TestCase as BaseTestCase;
-
-/**
- * @author Brian Faust <brian@cline.sh>
- * @internal
- */
-abstract class TestCase extends BaseTestCase {}
+return Factory::create(
+    paths: [__DIR__.'/src', __DIR__.'/tests'],
+);

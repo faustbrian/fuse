@@ -12,6 +12,10 @@ namespace Cline\Fuse\Events;
 use Cline\Fuse\Enums\CircuitBreakerState;
 use Illuminate\Foundation\Events\Dispatchable;
 
+/**
+ * @author Brian Faust <brian@cline.sh>
+ * @psalm-immutable
+ */
 final readonly class CircuitBreakerRequestSucceeded
 {
     use Dispatchable;
