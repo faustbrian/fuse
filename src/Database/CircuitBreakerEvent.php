@@ -9,7 +9,7 @@
 
 namespace Cline\Fuse\Database;
 
-use Cline\Fuse\Database\Concerns\HasFusePrimaryKey;
+use Cline\VariableKeys\Database\Concerns\HasVariablePrimaryKey;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,12 +37,12 @@ final class CircuitBreakerEvent extends Model
 {
     /** @use HasFactory<Factory<static>> */
     use HasFactory;
-    use HasFusePrimaryKey;
+    use HasVariablePrimaryKey;
 
     /**
      * Indicates if the IDs are auto-incrementing.
      *
-     * This will be overridden by HasFusePrimaryKey for ULID/UUID configs.
+     * This will be overridden by HasVariablePrimaryKey for ULID/UUID configs.
      *
      * @var bool
      */

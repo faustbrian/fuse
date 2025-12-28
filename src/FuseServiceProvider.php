@@ -10,7 +10,11 @@
 namespace Cline\Fuse;
 
 use Cline\Fuse\Contracts\CircuitBreakerStore;
+use Cline\Fuse\Database\CircuitBreaker;
+use Cline\Fuse\Database\CircuitBreakerEvent;
 use Cline\Fuse\Database\ModelRegistry;
+use Cline\VariableKeys\Enums\PrimaryKeyType;
+use Cline\VariableKeys\Facades\VariableKeys;
 use Illuminate\Container\Container;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Config;
@@ -57,6 +61,16 @@ final class FuseServiceProvider extends PackageServiceProvider
     #[Override()]
     public function registeringPackage(): void
     {
+        // Register models with VariableKeys for primary key type management
+        VariableKeys::map([
+            CircuitBreaker::class => [
+                'primary_key_type' => PrimaryKeyType::from(Config::get('fuse.primary_key_type', 'id')),
+            ],
+            CircuitBreakerEvent::class => [
+                'primary_key_type' => PrimaryKeyType::from(Config::get('fuse.primary_key_type', 'id')),
+            ],
+        ]);
+
         // Register ModelRegistry singleton (also has #[Singleton] attribute)
         // and configure morph key mappings for both context and boundary
         $this->app->resolving(ModelRegistry::class, function (ModelRegistry $registry): void {

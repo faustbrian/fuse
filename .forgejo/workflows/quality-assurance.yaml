@@ -14,8 +14,8 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: actions/checkout@v6
-      - uses: shivammathur/setup-php@v2
+      - uses: https://github.com/actions/checkout@v6
+      - uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: pcov
@@ -31,8 +31,8 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: actions/checkout@v6
-      - uses: shivammathur/setup-php@v2
+      - uses: https://github.com/actions/checkout@v6
+      - uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
@@ -47,8 +47,8 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: actions/checkout@v6
-      - uses: shivammathur/setup-php@v2
+      - uses: https://github.com/actions/checkout@v6
+      - uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
@@ -63,8 +63,8 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: actions/checkout@v6
-      - uses: shivammathur/setup-php@v2
+      - uses: https://github.com/actions/checkout@v6
+      - uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2

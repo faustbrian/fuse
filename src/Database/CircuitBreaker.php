@@ -9,7 +9,7 @@
 
 namespace Cline\Fuse\Database;
 
-use Cline\Fuse\Database\Concerns\HasFusePrimaryKey;
+use Cline\VariableKeys\Database\Concerns\HasVariablePrimaryKey;
 use Cline\Fuse\Enums\CircuitBreakerState;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -55,12 +55,12 @@ final class CircuitBreaker extends Model
 {
     /** @use HasFactory<Factory<static>> */
     use HasFactory;
-    use HasFusePrimaryKey;
+    use HasVariablePrimaryKey;
 
     /**
      * Indicates if the IDs are auto-incrementing.
      *
-     * This will be overridden by HasFusePrimaryKey for ULID/UUID configs.
+     * This will be overridden by HasVariablePrimaryKey for ULID/UUID configs.
      *
      * @var bool
      */
