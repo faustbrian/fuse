@@ -363,7 +363,7 @@ If you discover any security related issues, please email brian@cline.sh instead
 
 ## Credits
 
-- [Brian Faust](https://github.com/faustbrian)
+- [Brian Faust](https://git.cline.sh/faustbrian)
 - [All Contributors](../../contributors)
 
 ## License
