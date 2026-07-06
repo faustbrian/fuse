@@ -1,0 +1,27 @@
+<?php
+
+namespace Tests;
+
+use Cline\Fuse\FuseServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+
+class TestCase extends Orchestra
+{
+    protected function getPackageProviders($app): array
+    {
+        return [
+            FuseServiceProvider::class,
+        ];
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+        $app['config']->set('cache.default', 'array');
+        $app['config']->set('fuse.enabled', true);
+        $app['config']->set('fuse.default_threshold', 50);
+        $app['config']->set('fuse.default_timeout', 60);
+        $app['config']->set('fuse.default_min_requests', 10);
+        $app['config']->set('fuse.default_window', 60);
+    }
+}
